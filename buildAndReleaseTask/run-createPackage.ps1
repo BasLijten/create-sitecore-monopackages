@@ -16,3 +16,185 @@ if(!$workingFolder)
 #import assemblies
 Add-Type -Path "${PSScriptRoot}\Microsoft.Web.XmlTransform.dll"
 
+$regkey = "\SOFTWARE\Microsoft\IIS Extensions\MSDeploy\3\"
+$item = Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE$regkey" -Name "InstallPath"
+$msdeployExecutableName = "msdeploy.exe"
+$fullMsdeployPath = $item.InstallPath + $msdeployExecutableName
+
+Write-Host "Using $sourceDirectory as source location"
+if($roles -eq "")
+{
+    Write-Host "roles are empty. Trying to determine what roles to build"
+}
+else
+{
+    $roles = $roles.Split(",")
+    Write-Host "$roles"
+}
+
+if($previousBuildArtifactLocation -eq "")
+{
+    Write-Host "no previous artifact specified. This will slow down deployments becvause of the use of a fresh build package"
+}
+else
+{
+    Write-Host "using $previousBuildArtifactLocation as archive which will be updated for fast deployments"
+}
+
+Write-Host "results can be found at $outputDirectory"
+
+$msdeploy = $fullMsdeployPath
+
+if(!(Test-Path $outputDirectory)) {
+    New-Item -Path $outputDirectory -ItemType Directory
+    Write-Host "Created $outputDirectory"
+}
+
+Function Merge-XML
+{
+    param(
+        [string]$basefile,
+        [string]$appFile,
+        [string]$destiniationFile
+    )
+
+        $finalXml = "<parameters>"
+    
+
+        [xml]$xml = Get-Content $baseFile    
+        $finalXml += $xml.parameters.InnerXml    
+
+        [xml]$xml = Get-Content $appFile
+        $finalXml += $xml.parameters.InnerXml
+        $finalXml += "</parameters>"
+    ([xml]$finalXml).Save($destiniationFile)
+}
+
+Function TransForm-Xml
+{
+    param(
+        [string]$sourceFile,
+        [string]$transformFile,
+        [string]$outputFile
+    )
+
+    if (!(Test-Path $sourceFile))
+    {
+        Write-Error "File '${sourceFile}' not found."
+        
+        return
+    }
+
+    if (!(Test-Path $transformFile))
+    {
+        Write-Error "File '${transformFile}' not found."
+        
+        return
+    }
+
+    Write-Host "Applying transformations '${transformFile}' on '${sourceFile}' to '${outputFile}'..."
+    
+    $source = New-Object Microsoft.Web.XmlTransform.XmlTransformableDocument
+    $source.PreserveWhitespace = $true
+    $source.Load($sourceFile)
+
+    $transform = [System.IO.File]::ReadAllText($transformFile)
+    $transformation = New-Object Microsoft.Web.XmlTransform.XmlTransformation $transform, $false, $null
+    if (!$transformation.Apply($source))
+    {
+        Write-Error "Error while applying transformations '${transformFile}'."
+
+        return
+    }
+
+    # save output
+    $outputParent = Split-Path $OutputFile -Parent
+    if (!(Test-Path $outputParent))
+    {
+        Write-Verbose "Creating folder '${outputParent}'."
+
+        New-Item -Path $outputParent -ItemType Directory -Force > $null
+    }
+
+    $source.Save($outputFile)
+}
+
+Function Create-WDP
+{
+    param (
+        [string]$role
+    )
+
+    Copy-Item "$outputDirectory\web.$role.config" -Destination $sourceDirectory\web.config
+    
+    $PackageDestinationPath = "$outputDirectory\webdeploy.$role.zip"
+    
+    # create web deploy package
+    $verb = "-verb:sync"
+
+    $match = $sourceDirectory.Replace("\", "\\")
+    $sourceParameter = "-source:contentPath=`"$sourceDirectory`""
+
+
+    $declareParamFilePath = "$outputDirectory\parameters.$role.xml"
+    $declareParamFileParameter = "-declareparamfile=`"$($declareParamFilePath)`""
+    
+    ## the matchable parameter has to be injected over here, in order to be matched by the replace rule
+    $declareParam = "-declareparam:name=`"IIS Web Application Name`",kind=ProviderPath,scope=contentpath,match=$match"
+    $replace="-replace:match=`"$match`",replace=`"website`""
+
+
+    $destination = "-dest:package=`"$($PackageDestinationPath)`""
+
+    $skipDbFullSQL = "-skip:objectName=dbFullSql"
+    $skipDbDacFx = "-skip:objectName=dbDacFx"
+
+    Invoke-Expression "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+
+    #Copy-Item "C:\msdeploy\output\webdeploy.$role.zip" 
+}
+
+Function Create-WDPS
+{
+    $roles = "CD" #, "CM"
+
+    foreach($role in $roles)
+    {
+
+        $stopwatch =  [system.diagnostics.stopwatch]::StartNew() 
+
+        if(Test-Path "$outputDirectory\webdeploy.$role.zip") {
+            Write-Host "webdeploy.$role.zip is already there. Building package should be really fast"
+        }
+        else
+        {
+            Write-Host "no package yet. Looking in archive folder"
+        }
+        
+        $archive = "previousBuildArtifactLocation\webdeploy.$role.zip"
+        if(Test-Path $archive)
+        {
+            Copy-Item -Path $archive -Destination "$outputDirectory\webdeploy.$role.zip"
+            Write-Host "$role package copied from archive"           
+        }
+        else
+        {
+            Write-Host "no $role package available. Slow package time"
+        }
+
+        
+        Create-WDP -role $role
+
+        $stopwatch.Stop();
+        $elapsedTime = $stopwatch.Elapsed.TotalSeconds
+
+        Write-Host "Created WDP for $role in: $elapsedTime"cls
+    }
+}
+
+Merge-XML -basefile "$sourceDirectory\parameters.base.CD.xml" -appFile "$sourceDirectory\Parameters.CD.xml" -destiniationFile "$outputDirectory\parameters.CD.xml"
+
+#TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.cm.config" -outputFile "$outputDirectory\web.cm.config"
+TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.cd.config" -outputFile "$outputDirectory\web.cd.config"
+
+Create-WDPS

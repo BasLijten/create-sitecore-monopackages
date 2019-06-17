@@ -1,5 +1,5 @@
 $sourceDirectory ="c:\msdeploy\base" 
-$roles = "CM;CD" 
+$roles = "CD" 
 $outputDirectory = "c:\msdeploy\out"
 $previousBuildArtifactLocation = ""
 
