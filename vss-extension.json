@@ -1,0 +1,37 @@
+{
+    "manifestVersion": 1,
+    "id": "Build",
+    "version": "0.1.7",
+    "name": "Sitecore mono-package tool",
+    "publisher": "BasLijten",
+    "description": "Awesome tool to build Sitecorepackages which will increase the deployment to the speed of light ",
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],
+    "files" : [
+        {
+            "path": "buildAndReleaseTask"
+        }
+    ],    
+    "categories": [
+        "Azure Pipelines"
+    ],    
+    "repository": {
+        "type": "git",
+        "uri": "https://github.com/baslijten"
+    },
+    "contributions": [
+        {
+            "id": "create-sitecore-wdp",
+            "type": "ms.vss-distributed-task.task",
+            "targets": [
+                "ms.vss-distributed-task.tasks"
+            ],
+            "properties": {
+                "name": "buildAndReleaseTask"
+            }
+        }
+    ]    
+}

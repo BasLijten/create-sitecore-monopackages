@@ -1,5 +1,5 @@
 {
-    "id": "cdb04ff2-cb4a-49bb-8e21-48777e7e5e35",
+    "id": "a56dfe91-00fd-41d0-9a38-a4a71ffde7ef",
     "name": "create-sitecore-deployment-packages",
     "friendlyName": "Create Sitecore WDP packages for any role",
     "description": "Based on a source folder, one or more sitecore wdps will be created which can be used to deploy your sitecore roles.",
