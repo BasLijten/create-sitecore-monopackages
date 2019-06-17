@@ -1,0 +1,55 @@
+{
+    "id": "",
+    "name": "create-sitecore-deployment-packages",
+    "friendlyName": "Create Sitecore WDP packages for any role",
+    "description": "Based on a source folder, one or more sitecore wdps will be created which can be used to deploy your sitecore roles.",
+    "helpMarkDown": "",
+    "category": "Build",
+    "author": "Bas Lijten",
+    "version": {
+        "Major": 0,
+        "Minor": 1,
+        "Patch": 0
+    },
+    "instanceNameFormat": "Echo $(samplestring)",
+    "inputs": [
+        {
+            "name": "SourceDirectory",
+            "type": "string",
+            "label": "Directory of build output",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": "location of build output"
+        },
+        {
+            "name": "Roles",
+            "type": "string",
+            "label": "Which roles should be created. Leave empty to automatically detect",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "roles to build"
+        },
+        {
+            "name": "PreviousBuildArtifactLocation",
+            "type": "string",
+            "label": "Location of a previous succesful artifact. ",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "OutputDirectory",
+            "type": "string",
+            "label": "output directory",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        }
+    ],
+    "execution": {
+        "PowerShell3": {
+            "target": "$(currentDirectory)\\run-createPackage.ps1",
+            "workingDirectory": "$(System.DefaultWorkingDirectory)"
+        }
+    }
+}
