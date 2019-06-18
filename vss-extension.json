@@ -1,7 +1,7 @@
 {
     "manifestVersion": 1,
     "id": "Build",
-    "version": "0.1.15",
+    "version": "0.1.17",
     "name": "Sitecore mono-package tool",
     "publisher": "BasLijten",
     "description": "Awesome tool to build Sitecorepackages which will increase the deployment to the speed of light ",
@@ -12,7 +12,7 @@
     ],
     "files" : [
         {
-            "path": "buildAndReleaseTask"
+            "path": "CreatePackageTask"
         }
     ],    
     "categories": [
@@ -30,7 +30,7 @@
                 "ms.vss-distributed-task.tasks"
             ],
             "properties": {
-                "name": "buildAndReleaseTask"
+                "name": "CreatePackageTask"
             }
         }
     ]    
