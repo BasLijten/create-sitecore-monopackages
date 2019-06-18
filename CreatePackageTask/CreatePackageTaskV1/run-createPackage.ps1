@@ -28,6 +28,7 @@ if($roles -eq "")
 }
 else
 {
+    Write-Host "$roles"
     $roles = $roles.Split(",")
     Write-Host "$roles"
 }
