@@ -8,8 +8,8 @@
     "author": "Bas Lijten",
     "version": {
         "Major": 0,
-        "Minor": 1,
-        "Patch": 17
+        "Minor": 2,
+        "Patch": 1
     },
     "instanceNameFormat": "Echo $(samplestring)",
     "inputs": [
@@ -22,10 +22,25 @@
         },
         {
             "name": "Roles",
-            "type": "string",
+            "type": "pickList",
             "label": "Which roles should be created. Leave empty to automatically detect",            
+            "defaultValue": "",
             "required": false,
+            "options": {
+                "CD": "Content Delivery",
+                "CM": "Content Management",
+                "REP": "Reporting",
+                "PRC": "Processing",
+                "EXM": "EXM Dispatch"
+            },
             "helpMarkDown": "roles to build"
+        },
+        {
+            "name": "AdditionalRoles",
+            "type": "string",
+            "label": "Additional roles to build",            
+            "required": false,
+            "helpMarkDown": "split by semicolon, for example CD, CM or PRC"
         },
         {
             "name": "PreviousBuildArtifactLocation",
