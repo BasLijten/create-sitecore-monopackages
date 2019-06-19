@@ -2,11 +2,11 @@ param(
     [Parameter(Mandatory=$True)]
     [string]$sourceDirectory,
     [Parameter(Mandatory=$False)]
-    [string]$roles = "",
+    $roles = "",
     [Parameter(Mandatory=$False)]
     [string]$previousBuildArtifactLocation,
     [Parameter(Mandatory=$True)]
-    [string]$outputDirectory    
+    [string]$outputDirectory      
 )
 
 if(!$workingFolder)
@@ -28,8 +28,6 @@ if($roles -eq "")
 }
 else
 {
-    Write-Host "$roles"
-    $roles = $roles.Split(",")
     Write-Host "$roles"
 }
 
@@ -156,11 +154,11 @@ Function Create-WDP
 }
 
 Function Create-WDPS
-{
-    $roles = "CD" #, "CM"
-
+{    
     foreach($role in $roles)
     {
+        Merge-XML -basefile "$sourceDirectory\parameters.base.$role.xml" -appFile "$sourceDirectory\Parameters.$role.xml" -destiniationFile "$outputDirectory\parameters.$role.xml"        
+        TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.$role.config" -outputFile "$outputDirectory\web.$role.config"
 
         $stopwatch =  [system.diagnostics.stopwatch]::StartNew() 
 
@@ -193,9 +191,5 @@ Function Create-WDPS
     }
 }
 
-Merge-XML -basefile "$sourceDirectory\parameters.base.CD.xml" -appFile "$sourceDirectory\Parameters.CD.xml" -destiniationFile "$outputDirectory\parameters.CD.xml"
-
-#TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.cm.config" -outputFile "$outputDirectory\web.cm.config"
-TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.cd.config" -outputFile "$outputDirectory\web.cd.config"
 
 Create-WDPS

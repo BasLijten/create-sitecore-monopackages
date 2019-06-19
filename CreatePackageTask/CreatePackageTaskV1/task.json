@@ -5,11 +5,18 @@
     "description": "Based on a source folder, one or more sitecore wdps will be created which can be used to deploy your sitecore roles.",
     "helpMarkDown": "",
     "category": "Build",
+    "groups": [
+        {
+            "name": "roles",
+            "displayName": "Roles to build",
+            "isExpanded": true
+        }
+    ],
     "author": "Bas Lijten",
     "version": {
         "Major": 0,
         "Minor": 2,
-        "Patch": 1
+        "Patch": 10
     },
     "instanceNameFormat": "Echo $(samplestring)",
     "inputs": [
@@ -21,26 +28,66 @@
             "helpMarkDown": "location of build output"
         },
         {
-            "name": "Roles",
-            "type": "pickList",
-            "label": "Which roles should be created. Leave empty to automatically detect",            
-            "defaultValue": "",
+            "name": "Single",
+            "type": "boolean",
+            "label": "Single role",            
             "required": false,
-            "options": {
-                "CD": "Content Delivery",
-                "CM": "Content Management",
-                "REP": "Reporting",
-                "PRC": "Processing",
-                "EXM": "EXM Dispatch"
-            },
-            "helpMarkDown": "roles to build"
+            "defaultValue": "false",
+            "groupName": "roles"
+
+        },
+        {
+            "name": "CD",
+            "type": "boolean",
+            "label": "Content Delivery",            
+            "required": false,
+            "defaultValue": "false",
+            "groupName": "roles"
+
+        },
+        {
+            "name": "CM",
+            "type": "boolean",
+            "label": "Content Management",            
+            "required": false,
+            "defaultValue": "false",
+            "groupName": "roles"
+
+        },
+        {
+            "name": "PRC",
+            "type": "boolean",
+            "label": "Processing",            
+            "required": false,
+            "defaultValue": "false",
+            "groupName": "roles"
+
+        },
+        {
+            "name": "REP",
+            "type": "boolean",
+            "label": "Reporting",            
+            "required": true,
+            "defaultValue": "false",
+            "groupName": "roles"
+
+        },
+        {
+            "name": "EXM",
+            "type": "boolean",
+            "label": "Reporting",            
+            "required": true,
+            "defaultValue": "false",
+            "groupName": "roles"
+
         },
         {
             "name": "AdditionalRoles",
             "type": "string",
             "label": "Additional roles to build",            
             "required": false,
-            "helpMarkDown": "split by semicolon, for example CD, CM or PRC"
+            "helpMarkDown": "split by semicolon, for example CD, CM or PRC",
+            "groupName": "roles"
         },
         {
             "name": "PreviousBuildArtifactLocation",
