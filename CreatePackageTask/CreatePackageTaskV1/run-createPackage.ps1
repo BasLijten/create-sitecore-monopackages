@@ -14,7 +14,7 @@ if(!$workingFolder)
     $workingFolder = $env:SYSTEM_DEFAULTWORKINGDIRECTORY
 }
 #import assemblies
-Add-Type -Path "${PSScriptRoot}\Microsoft.Web.XmlTransform.dll"
+Add-Type -Path "${PSScriptRoot}\..\..\buildAndReleaseTask\Microsoft.Web.XmlTransform.dll"
 
 $regkey = "\SOFTWARE\Microsoft\IIS Extensions\MSDeploy\3\"
 $item = Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE$regkey" -Name "InstallPath"
@@ -52,21 +52,25 @@ if(!(Test-Path $outputDirectory)) {
 Function Merge-XML
 {
     param(
-        [string]$basefile,
-        [string]$appFile,
-        [string]$destiniationFile
+        [string]$sourceFile,
+        [string]$destinationFile
     )
+        if (!(Test-Path -Path $destinationFile))
+        {
+            New-Item $destinationFile -ItemType file -Value "<parameters/>"
+        }
+
+        Write-Output "Merging $($sourceFile)"
 
         $finalXml = "<parameters>"
     
-
-        [xml]$xml = Get-Content $baseFile    
+        [xml]$xml = Get-Content $sourceFile    
         $finalXml += $xml.parameters.InnerXml    
 
-        [xml]$xml = Get-Content $appFile
+        [xml]$xml = Get-Content $destinationFile
         $finalXml += $xml.parameters.InnerXml
         $finalXml += "</parameters>"
-    ([xml]$finalXml).Save($destiniationFile)
+    ([xml]$finalXml).Save($destinationFile)
 }
 
 Function TransForm-Xml
@@ -157,37 +161,50 @@ Function Create-WDPS
 {    
     foreach($role in $roles)
     {
-        Merge-XML -basefile "$sourceDirectory\parameters.base.$role.xml" -appFile "$sourceDirectory\Parameters.$role.xml" -destiniationFile "$outputDirectory\parameters.$role.xml"        
-        TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.$role.config" -outputFile "$outputDirectory\web.$role.config"
+        Write-Output ""
+        Write-Output "Merging files for role $($role) to $($destinationFile)"
+        ## Gather all 'deep' parameters files to merge for the specific role
+        $roleFiles = Get-ChildItem -Path "$sourceDirectory\parameters.*$role.xml" -Recurse -Force
+        $destinationFile = "$outputDirectory\parameters.$role.xml"
 
-        $stopwatch =  [system.diagnostics.stopwatch]::StartNew() 
-
-        if(Test-Path "$outputDirectory\webdeploy.$role.zip") {
-            Write-Host "webdeploy.$role.zip is already there. Building package should be really fast"
-        }
-        else
-        {
-            Write-Host "no package yet. Looking in archive folder"
+        Write-Output "$($roleFiles.Length) files found for role $($role)"
+        
+        foreach ($roleFile in $roleFiles) {
+            Merge-XML -sourceFile "$roleFile" -destinationFile "$destinationFile"
         }
         
-        $archive = "previousBuildArtifactLocation\webdeploy.$role.zip"
-        if(Test-Path $archive)
-        {
-            Copy-Item -Path $archive -Destination "$outputDirectory\webdeploy.$role.zip"
-            Write-Host "$role package copied from archive"           
-        }
-        else
-        {
-            Write-Host "no $role package available. Slow package time"
-        }
+        # TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.$role.config" -outputFile "$outputDirectory\web.$role.config"
+
+        # $stopwatch =  [system.diagnostics.stopwatch]::StartNew() 
+
+        # if(Test-Path "$outputDirectory\webdeploy.$role.zip") {
+        #     Write-Host "webdeploy.$role.zip is already there. Building package should be really fast"
+        # }
+        # else
+        # {
+        #     Write-Host "no package yet. Looking in archive folder"
+        # }
+        
+        # $archive = "previousBuildArtifactLocation\webdeploy.$role.zip"
+        # if(Test-Path $archive)
+        # {
+        #     Copy-Item -Path $archive -Destination "$outputDirectory\webdeploy.$role.zip"
+        #     Write-Host "$role package copied from archive"           
+        # }
+        # else
+        # {
+        #     Write-Host "no $role package available. Slow package time"
+        # }
 
         
-        Create-WDP -role $role
+        # Create-WDP -role $role
 
-        $stopwatch.Stop();
-        $elapsedTime = $stopwatch.Elapsed.TotalSeconds
+        # $stopwatch.Stop();
+        # $elapsedTime = $stopwatch.Elapsed.TotalSeconds
 
-        Write-Host "Created WDP for $role in: $elapsedTime"cls
+        # Write-Host "Created WDP for $role in: $elapsedTime"cls
+
+        Write-Output ""
     }
 }
 
