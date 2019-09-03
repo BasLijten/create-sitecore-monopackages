@@ -1,6 +1,10 @@
-$sourceDirectory ="${PSScriptRoot}\..\..\msdeploy\base" 
-$outputDirectory = "${PSScriptRoot}\..\..\msdeploy\out"
-$previousBuildArtifactLocation = ""
+$sourceDirectory = (Get-Item "${PSScriptRoot}\..\..\msdeploy\base").FullName
+$outputDirectory = (Get-Item "${PSScriptRoot}\..\..\msdeploy\out").FullName
+
+$previousBuiltArtifactLocation = ""
+if (Test-Path -Path "${PSScriptRoot}\..\..\msdeploy\out\PreviouslyBuiltArtifacts") {
+    $previousBuiltArtifactLocation = (Get-Item "${PSScriptRoot}\..\..\msdeploy\out\PreviouslyBuiltArtifacts").FullName
+}
 
 $roles = @();
 $standalone = $True
@@ -18,4 +22,4 @@ if($prc) { $roles += "REP" }
 if($exm) { $roles += "EXM" }
 
 $ps = "$PSScriptRoot\run-createPackage.ps1"
-.$ps -sourceDirectory $sourceDirectory -roles $roles -previousBuildArtifactLocation $previousBuildArtifactLocation -output $outputDirectory
+.$ps -sourceDirectory $sourceDirectory -roles $roles -previousBuiltArtifactLocation $previousBuiltArtifactLocation -output $outputDirectory

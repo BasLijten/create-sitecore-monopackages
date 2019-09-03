@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory=$False)]
     $roles = "",
     [Parameter(Mandatory=$False)]
-    [string]$previousBuildArtifactLocation,
+    [string]$previousBuiltArtifactLocation,
     [Parameter(Mandatory=$True)]
     [string]$outputDirectory      
 )
@@ -31,13 +31,13 @@ else
     Write-Host "$roles"
 }
 
-if($previousBuildArtifactLocation -eq "")
+if($previousBuiltArtifactLocation -eq "")
 {
     Write-Host "no previous artifact specified. This will slow down deployments becvause of the use of a fresh build package"
 }
 else
 {
-    Write-Host "using $previousBuildArtifactLocation as archive which will be updated for fast deployments"
+    Write-Host "using $previousBuiltArtifactLocation as archive which will be updated for fast deployments"
 }
 
 Write-Host "results can be found at $outputDirectory"
@@ -128,17 +128,20 @@ Function Create-WDP
         [string]$role
     )
 
-    Copy-Item "$outputDirectory\web.$role.config" -Destination $sourceDirectory\web.config
+    if (!(Test-Path "$outputDirectory\$role")) {
+        New-Item -ItemType directory -Path "$outputDirectory\$role"
+    }
+
+    Copy-Item "$outputDirectory\web.$role.config" -Destination "$outputDirectory\$role\web.config"
     
     $PackageDestinationPath = "$outputDirectory\webdeploy.$role.zip"
     
     # create web deploy package
     $verb = "-verb:sync"
 
-    $match = $sourceDirectory.Replace("\", "\\")
-    $sourceParameter = "-source:contentPath=`"$sourceDirectory`""
-
-
+    $match = "$outputDirectory\$role".Replace("\", "\\")
+    $sourceParameter = "-source:contentPath=`"$outputDirectory\$role`""
+    
     $declareParamFilePath = "$outputDirectory\parameters.$role.xml"
     $declareParamFileParameter = "-declareparamfile=`"$($declareParamFilePath)`""
     
@@ -146,15 +149,15 @@ Function Create-WDP
     $declareParam = "-declareparam:name=`"IIS Web Application Name`",kind=ProviderPath,scope=contentpath,match=$match"
     $replace="-replace:match=`"$match`",replace=`"website`""
 
-
     $destination = "-dest:package=`"$($PackageDestinationPath)`""
 
     $skipDbFullSQL = "-skip:objectName=dbFullSql"
     $skipDbDacFx = "-skip:objectName=dbDacFx"
 
-    Invoke-Expression "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
 
-    #Copy-Item "C:\msdeploy\output\webdeploy.$role.zip" 
+    Invoke-Expression $expression
+    Write-Output ""
 }
 
 Function Create-WDPS
@@ -162,47 +165,67 @@ Function Create-WDPS
     foreach($role in $roles)
     {
         Write-Output ""
-        Write-Output "Merging files for role $($role) to $($destinationFile)"
         ## Gather all 'deep' parameters files to merge for the specific role
-        $roleFiles = Get-ChildItem -Path "$sourceDirectory\parameters.*$role.xml" -Recurse -Force
-        $destinationFile = "$outputDirectory\parameters.$role.xml"
+        $roleParametersFiles = Get-ChildItem -Path "$sourceDirectory\parameters.*$role.xml" -Recurse -Force
+        $destinationParametersFile = "$outputDirectory\parameters.$role.xml"
 
-        Write-Output "$($roleFiles.Length) files found for role $($role)"
+        Write-Output "Merging parameter files for role $($role) to $($destinationParametersFile)"
+        Write-Output "$($roleParametersFiles.Length) files found for role $($role)"
         
-        foreach ($roleFile in $roleFiles) {
-            Merge-XML -sourceFile "$roleFile" -destinationFile "$destinationFile"
+        # Remove the old parameters file first
+        if (Test-Path($destinationParametersFile)){
+            Remove-Item -Path "$destinationParametersFile" -Force
+        }
+
+        foreach ($roleParameterFile in $roleParametersFiles) {
+            Merge-XML -sourceFile "$roleParameterFile" -destinationFile "$destinationParametersFile"
+        }
+
+        Write-Output ""
+
+        ## Gather all 'deep' web config files to merge for the specific role
+        $roleWebConfigFiles = Get-ChildItem -Path "$sourceDirectory\web.*$role.config" -Recurse -Force
+        $destinationWebConfigFile = "$outputDirectory\web.$role.config"
+
+        Write-Output "Merging web.XXX.config files for role $($role) to $($destinationWebConfigFile)"
+        Write-Output "$($roleWebConfigFiles.Length) files found for role $($role)"
+        
+        # Prepare the output configuration file
+        Copy-Item "$sourceDirectory\web.config" "$outputDirectory\web.$role.config"
+
+        foreach ($roleWebConfigFile in $roleWebConfigFiles) {
+            TransForm-Xml -sourceFile "$outputDirectory\web.$role.config" -transformFile $roleWebConfigFile -outputFile "$outputDirectory\web.$role.config"
         }
         
-        # TransForm-Xml -sourceFile "$sourceDirectory\web.base.config" -transformFile "$sourceDirectory\web.helix.$role.config" -outputFile "$outputDirectory\web.$role.config"
+        Write-Output ""
 
-        # $stopwatch =  [system.diagnostics.stopwatch]::StartNew() 
+        $stopwatch =  [system.diagnostics.stopwatch]::StartNew() 
 
-        # if(Test-Path "$outputDirectory\webdeploy.$role.zip") {
-        #     Write-Host "webdeploy.$role.zip is already there. Building package should be really fast"
-        # }
-        # else
-        # {
-        #     Write-Host "no package yet. Looking in archive folder"
-        # }
+        if (Test-Path "$outputDirectory\webdeploy.$role.zip") {
+            Write-Host "webdeploy.$role.zip is already there. Building package should be really fast"
+        }
+        else {
+            Write-Host "no package yet. Looking in archive folder"
+        }
         
-        # $archive = "previousBuildArtifactLocation\webdeploy.$role.zip"
-        # if(Test-Path $archive)
-        # {
-        #     Copy-Item -Path $archive -Destination "$outputDirectory\webdeploy.$role.zip"
-        #     Write-Host "$role package copied from archive"           
-        # }
-        # else
-        # {
-        #     Write-Host "no $role package available. Slow package time"
-        # }
-
+        $archive = "$previousBuiltArtifactLocation\webdeploy.$role.zip"
         
-        # Create-WDP -role $role
+        if(Test-Path $archive)
+        {
+            Copy-Item -Path $archive -Destination "$outputDirectory\webdeploy.$role.zip"
+            Write-Host "$role package copied from archive"           
+        }
+        else
+        {
+            Write-Host "no $role package available. Slow package time"
+        }
+        
+        Create-WDP -role $role
 
-        # $stopwatch.Stop();
-        # $elapsedTime = $stopwatch.Elapsed.TotalSeconds
+        $stopwatch.Stop();
+        $elapsedTime = $stopwatch.Elapsed.TotalSeconds
 
-        # Write-Host "Created WDP for $role in: $elapsedTime"cls
+        Write-Host "Created WDP for $role in: $elapsedTime"
 
         Write-Output ""
     }
