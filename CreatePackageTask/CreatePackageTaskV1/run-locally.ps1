@@ -1,9 +1,9 @@
-$sourceDirectory = (Get-Item "${PSScriptRoot}\..\..\msdeploy\base").FullName
+$sourceDirectory = (Get-Item "${PSScriptRoot}\..\..\testinput\base").FullName
 $outputDirectory = (Get-Item "${PSScriptRoot}\..\..\msdeploy\out").FullName
 
 $previousBuiltArtifactLocation = ""
-if (Test-Path -Path "${PSScriptRoot}\..\..\msdeploy\out\PreviouslyBuiltArtifacts") {
-    $previousBuiltArtifactLocation = (Get-Item "${PSScriptRoot}\..\..\msdeploy\out\PreviouslyBuiltArtifacts").FullName
+if (Test-Path -Path "${PSScriptRoot}\..\..\testinput\PreviouslyBuiltArtifacts") {
+    $previousBuiltArtifactLocation = (Get-Item "${PSScriptRoot}\..\..\testinput\PreviouslyBuiltArtifacts").FullName
 }
 
 $roles = @();
