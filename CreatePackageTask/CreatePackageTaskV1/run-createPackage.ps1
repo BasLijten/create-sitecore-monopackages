@@ -44,6 +44,8 @@ Write-Host "results can be found at $outputDirectory"
 
 $msdeploy = $fullMsdeployPath
 
+
+
 if(!(Test-Path $outputDirectory)) {
     New-Item -Path $outputDirectory -ItemType Directory
     Write-Host "Created $outputDirectory"
@@ -142,7 +144,7 @@ Function Create-WDP
     # create web deploy package
     $verb = "-verb:sync"
 
-    $match = "$outputDirectory\$role".Replace("\", "\\")
+    $match = "$sourceDirectory".Replace("\", "\\")
     $sourceParameter = "-source:contentPath=`"$sourceDirectory`""
     
     $declareParamFilePath = "$outputDirectory\parameters.$role.xml"
@@ -156,10 +158,14 @@ Function Create-WDP
 
     $skipDbFullSQL = "-skip:objectName=dbFullSql"
     $skipDbDacFx = "-skip:objectName=dbDacFx"
+    $skiprolespecifictransformations = "-skip:objectName=filePath,absolutePath=[wW]eb(\.\w+)+\.config"
+    $skipParameters = "-skip:objectName=filePath,absolutePath=[pP]arameters(\.\w+)+.xml"
 
     #skip parameters.xml and role specific web.config
 
-    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skiprolespecifictransformations $skipParameters $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+    
+    Write-Output "$expression"
 
     Invoke-Expression $expression
     Write-Output ""
