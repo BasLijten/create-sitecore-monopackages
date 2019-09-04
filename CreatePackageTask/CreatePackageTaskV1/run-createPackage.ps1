@@ -160,10 +160,11 @@ Function Create-WDP
     $skipDbDacFx = "-skip:objectName=dbDacFx"
     $skiprolespecifictransformations = "-skip:objectName=filePath,absolutePath=[wW]eb(\.\w+)+\.config"
     $skipParameters = "-skip:objectName=filePath,absolutePath=[pP]arameters(\.\w+)+.xml"
+    $skipTargetFiles = "-skip:objectName=filePath,absolutePath=(\w+)+\.target"
 
     #skip parameters.xml and role specific web.config
 
-    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skiprolespecifictransformations $skipParameters $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipTargetFiles $skiprolespecifictransformations $skipParameters $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
     
     Write-Output "$expression"
 
