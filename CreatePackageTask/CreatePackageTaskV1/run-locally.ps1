@@ -19,7 +19,7 @@ if($cd) { $roles += "CD" }
 if($cm) { $roles += "CM" }
 if($rep) { $roles += "PRC" }
 if($prc) { $roles += "REP" }
-if($exm) { $roles += "EXM" }
+if($exm) { $roles += "DDS" }
 
 $ps = "$PSScriptRoot\run-createPackage.ps1"
 .$ps -sourceDirectory $sourceDirectory -roles $roles -previousBuiltArtifactLocation $previousBuiltArtifactLocation -output $outputDirectory
