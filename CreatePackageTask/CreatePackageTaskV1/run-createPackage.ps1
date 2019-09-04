@@ -14,7 +14,7 @@ if(!$workingFolder)
     $workingFolder = $env:SYSTEM_DEFAULTWORKINGDIRECTORY
 }
 #import assemblies
-Add-Type -Path "${PSScriptRoot}\..\..\buildAndReleaseTask\Microsoft.Web.XmlTransform.dll"
+Add-Type -Path "${PSScriptRoot}\buildAndReleaseTask\Microsoft.Web.XmlTransform.dll"
 
 $regkey = "\SOFTWARE\Microsoft\IIS Extensions\MSDeploy\3\"
 $item = Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE$regkey" -Name "InstallPath"
