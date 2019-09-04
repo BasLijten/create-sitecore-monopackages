@@ -159,7 +159,7 @@ Function Create-WDP
     $skipDbFullSQL = "-skip:objectName=dbFullSql"
     $skipDbDacFx = "-skip:objectName=dbDacFx"
     $skiprolespecifictransformations = "-skip:objectName=filePath,absolutePath=[wW]eb(\.\w+)+\.config"
-    $skipParameters = "-skip:objectName=filePath,absolutePath=[pP]arameters(\.\w+)+.xml"
+    $skipParameters = "-skip:objectName=filePath,absolutePath=[pP]arameters(\.\w+)*.xml"
     $skipTargetFiles = "-skip:objectName=filePath,absolutePath=(\w+)+\.target"
 
     #skip parameters.xml and role specific web.config
