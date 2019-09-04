@@ -6,10 +6,12 @@ if (Test-Path -Path "${PSScriptRoot}\..\..\testinput\PreviouslyBuiltArtifacts") 
     $previousBuiltArtifactLocation = (Get-Item "${PSScriptRoot}\..\..\testinput\PreviouslyBuiltArtifacts").FullName
 }
 
+$previousBuiltArtifactLocation = ""
+
 $roles = @();
 $standalone = $True
-$cd = $True
-$cm = $True
+$cd = $False
+$cm = $False
 $rep = $False
 $prc = $False
 $exm = $False

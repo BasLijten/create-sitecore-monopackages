@@ -128,19 +128,22 @@ Function Create-WDP
         [string]$role
     )
 
+    # Directory to store the role specific web.config
     if (!(Test-Path "$outputDirectory\$role")) {
         New-Item -ItemType directory -Path "$outputDirectory\$role"
     }
 
-    Copy-Item "$outputDirectory\web.$role.config" -Destination "$outputDirectory\$role\web.config"
+    # copy to generated web.role.config to the base directory, ready to packge
+    Copy-Item "$outputDirectory\web.$role.config" -Destination "$sourceDirectory\web.config"
     
+    # where will the zip show up?
     $PackageDestinationPath = "$outputDirectory\webdeploy.$role.zip"
     
     # create web deploy package
     $verb = "-verb:sync"
 
     $match = "$outputDirectory\$role".Replace("\", "\\")
-    $sourceParameter = "-source:contentPath=`"$outputDirectory\$role`""
+    $sourceParameter = "-source:contentPath=`"$sourceDirectory`""
     
     $declareParamFilePath = "$outputDirectory\parameters.$role.xml"
     $declareParamFileParameter = "-declareparamfile=`"$($declareParamFilePath)`""
@@ -154,6 +157,8 @@ Function Create-WDP
     $skipDbFullSQL = "-skip:objectName=dbFullSql"
     $skipDbDacFx = "-skip:objectName=dbDacFx"
 
+    #skip parameters.xml and role specific web.config
+
     $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
 
     Invoke-Expression $expression
@@ -166,7 +171,7 @@ Function Create-WDPS
     {
         Write-Output ""
         ## Gather all 'deep' parameters files to merge for the specific role
-        $roleParametersFiles = Get-ChildItem -Path "$sourceDirectory\parameters.*$role.xml" -Recurse -Force
+        $roleParametersFiles = Get-ChildItem -Path "$sourceDirectory\parameters.*$role.xml" -Force
         $destinationParametersFile = "$outputDirectory\parameters.$role.xml"
 
         Write-Output "Merging parameter files for role $($role) to $($destinationParametersFile)"
@@ -184,17 +189,19 @@ Function Create-WDPS
         Write-Output ""
 
         ## Gather all 'deep' web config files to merge for the specific role
-        $roleWebConfigFiles = Get-ChildItem -Path "$sourceDirectory\web.*$role.config" -Recurse -Force
+        $roleWebConfigFiles = Get-ChildItem -Path "$sourceDirectory\web.*$role.config" -Force -Exclude "$sourceDirectory\web.base.$role.config"
         $destinationWebConfigFile = "$outputDirectory\web.$role.config"
 
         Write-Output "Merging web.XXX.config files for role $($role) to $($destinationWebConfigFile)"
         Write-Output "$($roleWebConfigFiles.Length) files found for role $($role)"
         
         # Prepare the output configuration file
-        Copy-Item "$sourceDirectory\web.config" "$outputDirectory\web.$role.config"
+        $rolespecificWebconfigfile = "$outputDirectory\web.$role.config"
+        Copy-Item "$sourceDirectory\web.base.$role.config" $rolespecificWebconfigfile
+
 
         foreach ($roleWebConfigFile in $roleWebConfigFiles) {
-            TransForm-Xml -sourceFile "$outputDirectory\web.$role.config" -transformFile $roleWebConfigFile -outputFile "$outputDirectory\web.$role.config"
+            TransForm-Xml -sourceFile $rolespecificWebconfigfile -transformFile $roleWebConfigFile -outputFile $rolespecificWebconfigfile
         }
         
         Write-Output ""
