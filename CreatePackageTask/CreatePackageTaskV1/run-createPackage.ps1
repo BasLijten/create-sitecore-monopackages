@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory=$False)]
     $roles = "",
     [Parameter(Mandatory=$False)]
-    [string]$previousBuiltArtifactLocation,
+    [string]$previousBuildArtifactLocation,
     [Parameter(Mandatory=$True)]
     [string]$outputDirectory      
 )
@@ -31,13 +31,13 @@ else
     Write-Host "$roles"
 }
 
-if($previousBuiltArtifactLocation -eq "")
+if($previousBuildArtifactLocation -eq "")
 {
     Write-Host "no previous artifact specified. This will slow down deployments becvause of the use of a fresh build package"
 }
 else
 {
-    Write-Host "using $previousBuiltArtifactLocation as archive which will be updated for fast deployments"
+    Write-Host "using $previousBuildArtifactLocation as archive which will be updated for fast deployments"
 }
 
 Write-Host "results can be found at $outputDirectory"
@@ -164,7 +164,8 @@ Function Create-WDP
 
     #skip parameters.xml and role specific web.config
 
-    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipTargetFiles $skiprolespecifictransformations $skipParameters $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+    #$expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipTargetFiles $skiprolespecifictransformations $skipParameters $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
+    $expression = "& '$msdeploy' --% $verb $sourceParameter $destination $declareParamFileParameter $declareParam $skipDbFullSQL $skipDbDacFx $replace -useChecksum"
     
     Write-Output "$expression"
 
@@ -222,7 +223,7 @@ Function Create-WDPS
             Write-Host "no package yet. Looking in archive folder"
         }
         
-        $archive = "$previousBuiltArtifactLocation\webdeploy.$role.zip"
+        $archive = "$previousBuildArtifactLocation\webdeploy.$role.zip"
         
         if(Test-Path $archive)
         {
